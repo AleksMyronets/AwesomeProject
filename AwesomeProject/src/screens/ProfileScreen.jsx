@@ -9,10 +9,10 @@ import {
 } from "react-native";
 import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import Background from "../components/Background";
-import avatarProfil from "../../src/pictures/avtar-profil.png";
-import forest from "../pictures/forest.png";
-import sky from "../pictures/sky.png";
-import house from "../pictures/house.png";
+import avatarProfil from "../screens/images/avtar-profil.png";
+import forest from "../screens/images/forest.png";
+import sky from "../screens/images/sky.png";
+import house from "../screens/images/house.png";
 
 const POSTS = [
   {
