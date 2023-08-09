@@ -1,5 +1,5 @@
 import { View, Image } from "react-native";
-import photoBg from "../../src/screens/PhotoBG.jpg";
+import photoBg from "../../src/screens/PhotoBG.png";
 
 function Background() {
   return (
