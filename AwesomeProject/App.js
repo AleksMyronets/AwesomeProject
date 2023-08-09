@@ -1,5 +1,5 @@
 import { RegistrationScreen } from "./src/screens/RegistrationScreen";
-import { LoginScreen } from "./src/Screens/LoginScreen";
+import { LoginScreen } from "./src/sreens/LoginScreen";
 import { CommentsScreen } from "./src/screens/CommentsScreen";
 import { Home } from "./src/screens/Home";
 import { useFonts } from "expo-font";
