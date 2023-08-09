@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
-import Background from "../Components/Background";
+import Background from "../components/Background";
 import avatarProfil from "../../src/pictures/avtar-profil.png";
 import forest from "../pictures/forest.png";
 import sky from "../pictures/sky.png";
