@@ -1,42 +1,52 @@
 import { RegistrationScreen } from "./src/screens/RegistrationScreen";
-import { LoginScreen } from "./src/screens/LoginScreen";
-import { PostsScreen } from "./src/screens/PostsScreen";
-import { ProfileScreen } from "./src/Screens/ProfileScreen"
-import { useFonts } from 'expo-font';
-import { useCallback } from 'react';
+import { LoginScreen } from "./src/Screens/LoginScreen";
+import { CommentsScreen } from "./src/screens/CommentsScreen";
+import { Home } from "./src/screens/Home";
+import { useFonts } from "expo-font";
+import { useCallback } from "react";
+import "react-native-gesture-handler";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-
-
+const MainStack = createStackNavigator();
 
 export default function App() {
-
   const [fontsLoaded] = useFonts({
-    'Roboto-Medium': require('./src/assets/fonts/Roboto-Medium.ttf'),
-    'Roboto-Regular': require('./src/assets/fonts/Roboto-Regular.ttf'),
-    'RobotoMedium': require("./screens/fonts/Roboto-Medium.ttf"),
+    "Roboto-Medium": require("./src/assets/fonts/Roboto-Medium.ttf"),
+    "Roboto-Regular": require("./src/assets/fonts/Roboto-Regular.ttf"),
   });
 
-  const registerInfo=(info)=>{
-    console.debug(info);
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
   }
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <RegistrationScreen registerInfo={registerInfo}/>
-      <LoginScreen logininfo={loginInfo}/>
-    </View>
+    <NavigationContainer>
+      <MainStack.Navigator initialRouteName="Registration">
+        <MainStack.Screen
+          name="Registration"
+          options={{ headerShown: false }}
+          component={RegistrationScreen}
+        />
+        <MainStack.Screen
+          name="Login"
+          options={{ headerShown: false }}
+          component={LoginScreen}
+        />
+        <MainStack.Screen
+          name="Home"
+          options={{ headerShown: false }}
+          component={Home}
+        />
+      </MainStack.Navigator>
+    </NavigationContainer>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop:20,
-  },
-});
+};
   
   // const onLayoutRootView = useCallback(async () => {
   //   if (fontsLoaded) {
