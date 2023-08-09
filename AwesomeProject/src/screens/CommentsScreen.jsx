@@ -8,9 +8,9 @@ import {
   TextInput,
 } from "react-native";
 import { AntDesign, Feather } from "@expo/vector-icons";
-import rectangle from "../pictures/rectangle.png";
-import ellipse from "../pictures/ellipse.png";
-import ellipse2 from "../pictures/ellipse2.png";
+import rectangle from "../screens/images/rectangle.png";
+import ellipse from "../screens/images/ellipse.png";
+import ellipse2 from "../screens/images/ellipse2.png";
 import { useState } from "react";
 
 const COURSES = [
