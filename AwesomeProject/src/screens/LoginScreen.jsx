@@ -9,7 +9,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-// import { AntDesign } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import Background from "../components/Background";
 
 import { useState } from "react";
