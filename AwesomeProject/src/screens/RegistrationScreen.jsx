@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     width: 25,
     height: 25,
-    left: Platform.OS === "ios" ? "67%" : "69%",
+    left: Platform.OS === "android" ? "67%" : "69%",
     top: 20,
     flex: 1,
     alignItems: "center",
