@@ -16,7 +16,13 @@ import { ScrollView } from "react-native";
 
 import { useEffect, useState } from "react";
 
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  increment,
+  onSnapshot,
+  updateDoc,
+} from "firebase/firestore";
 
 import { db } from "../../firebase/config";
 
@@ -32,10 +38,6 @@ export const PostScreen = () => {
     navigation.navigate("Login");
   };
 
-  const goToCommentsScreen = () => {
-    navigation.navigate("CommentsScreen");
-  };
-
   const onMap = (data) => {
     if (!data) {
       alert("not coords");
@@ -47,22 +49,22 @@ export const PostScreen = () => {
     });
   };
 
-  useEffect(() => {
-    const getAllPost = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "posts"));
-        const postsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          data: doc.data(),
-        }));
-        setPosts(postsData);
-      } catch (error) {
-        console.log(error);
-        throw error;
-      }
-    };
+  const like = async (postId) => {
+    const postRef = doc(db, "posts", postId);
+    await updateDoc(postRef, {
+      likes: increment(1),
+    });
+  };
 
-    getAllPost(posts);
+  useEffect(() => {
+    const dbRef = collection(db, "posts");
+    onSnapshot(dbRef, (data) => {
+      const postsData = data.docs.map((doc) => ({
+        id: doc.id,
+        data: doc.data(),
+      }));
+      setPosts(postsData);
+    });
   }, []);
 
   const onComment = (id, url) => {
@@ -93,11 +95,19 @@ export const PostScreen = () => {
               <TouchableOpacity
                 onPress={() => onComment(post.id, post.data.photo)}
               >
-                <Ionicons name="chatbubble" size={24} color="#BDBDBD" />
+                {post.data.comments === 0 ? (
+                  <Ionicons name="chatbubble" size={24} color="#BDBDBD" />
+                ) : (
+                  <Ionicons name="chatbubble" size={24} color="#FF6C00" />
+                )}
               </TouchableOpacity>
               <Text style={styles.comments}>{post.data.comments}</Text>
-              <TouchableOpacity>
-                <Feather name="thumbs-up" size={24} color="#BDBDBD" />
+              <TouchableOpacity onPress={() => like(post.id)}>
+                {post.data.likes === 0 ? (
+                  <Feather name="thumbs-up" size={24} color="#BDBDBD" />
+                ) : (
+                  <Feather name="thumbs-up" size={24} color="#FF6C00" />
+                )}
               </TouchableOpacity>
               <Text style={styles.like}>{post.data.likes}</Text>
               <TouchableOpacity
@@ -147,7 +157,7 @@ const styles = StyleSheet.create({
   },
   avtarConteiner: {
     width: 60,
-    heught: 60,
+    height: 60,
     borderRadius: 16,
     backgroundColor: "#F6F6F6",
   },
