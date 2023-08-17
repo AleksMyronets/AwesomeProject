@@ -6,6 +6,7 @@ import {
   TextInput,
   Image,
 } from "react-native";
+
 import { FontAwesome, AntDesign, Feather } from "@expo/vector-icons";
 
 import { useNavigation } from "@react-navigation/native";
@@ -28,7 +29,6 @@ import { storage } from "../../firebase/config";
 
 export const CreatePostsScreen = () => {
   const navigation = useNavigation();
-
   const [photo, setPhoto] = useState(null);
   const [cameraRef, setCameraRef] = useState(null);
   const [location, setLocation] = useState(null);
@@ -100,7 +100,6 @@ export const CreatePostsScreen = () => {
 
   const deleteState = () => {
     setNamePost("");
-    setLocation("");
     setLocationTitle("");
     setPhoto(null);
     setIsButtonDisabled(true);
