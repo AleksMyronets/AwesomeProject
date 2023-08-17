@@ -8,19 +8,50 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Image,
 } from "react-native";
+
 import { AntDesign } from "@expo/vector-icons";
+
 import Background from "../components/Background";
+
 import { useState } from "react";
 
+import { useNavigation } from "@react-navigation/native";
+
+import { auth } from "../../firebase/config";
+
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+
+import { useDispatch } from "react-redux";
+
+import { addUser } from "../../redux/sliceAuth";
+
+import * as ImagePicker from "expo-image-picker";
+
+import { writeDataToFirestore } from "../../firebase/frestore";
+
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+
+import { storage } from "../../firebase/config";
+
+const initialState = {
+  email: "",
+  password: "",
+  login: "",
+  imageUser: null,
+};
+
 export const RegistrationScreen = () => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
   const [isName, setIsName] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isPassword, setIsPassword] = useState(false);
-  const [login, setLogin] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(true);
+  const [state, setState] = useState(initialState);
+  const [imageUser, setImageUser] = useState("");
 
   const handleFocusName = () => setIsName(true);
   const handleBlurName = () => setIsName(false);
@@ -29,20 +60,73 @@ export const RegistrationScreen = () => {
   const handleFocusPassword = () => setIsPassword(true);
   const handleBlurPassword = () => setIsPassword(false);
 
-  const onData = (event) => {
-    event.preventDefault();
-    console.log(`login: ${login}`, `email: ${email}`, `password: ${password}`);
-    setShowPassword(true);
-    reset();
-  };
-  const reset = () => {
-    setLogin("");
-    setEmail("");
-    setPassword("");
+  const addPhotoUser = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setImageUser(result.assets[0].uri);
+    }
   };
 
+  const uploadImageToServer = async () => {
+    if (imageUser) {
+      try {
+        const response = await fetch(imageUser);
+
+        const file = await response.blob();
+        const uniquePostId = Date.now().toString();
+        const imageRef = ref(
+          storage,
+          `profileImageUser/${uniquePostId}/${file.data.name}`
+        );
+
+        await uploadBytes(imageRef, file);
+        const downloadeURL = await getDownloadURL(imageRef);
+        dispatch(onData({ ...state, imageUser: downloadeURL }));
+      } catch (error) {
+        console.warn("uploadImageToServer", error);
+      }
+    }
+    if (!imageUser) {
+      dispatch(onData(state));
+    }
+  };
+
+  const onData =
+    ({ email, password, login, imageUser }) =>
+    async () => {
+      await createUserWithEmailAndPassword(auth, email, password);
+      try {
+        const user = await auth.currentUser;
+        await updateProfile(user, {
+          displayName: login,
+          photoURL: imageUser,
+        });
+        const { displayName, uid, photoURL } = user;
+        console.log(photoURL);
+        const updatedProfile = {
+          login: displayName,
+          userId: uid,
+          imageUser: photoURL,
+          password: state.password,
+          email: state.email,
+          userRegister: false,
+        };
+        dispatch(addUser(updatedProfile));
+        writeDataToFirestore(updatedProfile);
+        setShowPassword(true);
+        navigation.navigate("Login");
+      } catch (error) {
+        throw error;
+      }
+    };
+
   const getPassword = () => {
-    if (password !== "") setShowPassword(false);
+    if (state.password !== "") setShowPassword(false);
   };
 
   return (
@@ -57,13 +141,16 @@ export const RegistrationScreen = () => {
       >
         <Background />
         <KeyboardAvoidingView
-          behavior={Platform.OS === "android" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.container}
           keyboardVerticalOffset={-130}
         >
           <View style={styles.registration}>
-            <View style={styles.photoUser}></View>
-            <TouchableOpacity style={styles.btnPhotoAdd}>
+            <Image
+              style={styles.photoUser}
+              source={imageUser ? { uri: imageUser } : null}
+            />
+            <TouchableOpacity style={styles.btnPhotoAdd} onPress={addPhotoUser}>
               <AntDesign name="plus" size={20} color="#FF6C00" />
             </TouchableOpacity>
             <Text style={styles.title}>Реєстрація</Text>
@@ -79,8 +166,10 @@ export const RegistrationScreen = () => {
                 padding: 16,
                 borderColor: !isName ? "#E8E8E8" : "#FF6C00",
               }}
-              value={login}
-              onChangeText={setLogin}
+              value={state.login}
+              onChangeText={(value) =>
+                setState((prevState) => ({ ...prevState, login: value }))
+              }
               onFocus={handleFocusName}
               onBlur={handleBlurName}
               placeholder="Логін"
@@ -97,8 +186,10 @@ export const RegistrationScreen = () => {
                 borderColor: !isFocused ? "#E8E8E8" : "#FF6C00",
               }}
               keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
+              value={state.email}
+              onChangeText={(value) =>
+                setState((prevState) => ({ ...prevState, email: value }))
+              }
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder="Адреса електронної пошти"
@@ -116,8 +207,10 @@ export const RegistrationScreen = () => {
                 borderColor: !isPassword ? "#E8E8E8" : "#FF6C00",
               }}
               secureTextEntry={showPassword}
-              value={password}
-              onChangeText={setPassword}
+              value={state.password}
+              onChangeText={(value) =>
+                setState((prevState) => ({ ...prevState, password: value }))
+              }
               onFocus={handleFocusPassword}
               onBlur={handleBlurPassword}
               placeholder="Пароль"
@@ -128,12 +221,17 @@ export const RegistrationScreen = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.btn}>
-              <Text style={styles.btnTitle} onPress={onData}>
+              <Text style={styles.btnTitle} onPress={uploadImageToServer}>
                 Зареєстуватися
               </Text>
             </TouchableOpacity>
             <TouchableOpacity>
-              <Text style={styles.come}>Вже є акаунт? Увійти</Text>
+              <Text
+                style={styles.come}
+                onPress={() => navigation.navigate("Login")}
+              >
+                Вже є акаунт? Увійти
+              </Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -188,40 +286,11 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     width: 25,
     height: 25,
-    left: Platform.OS === "android" ? "67%" : "69%",
+    left: Platform.OS === "ios" ? "67%" : "69%",
     top: 20,
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  inputLogin: {
-    marginTop: 32,
-    backgroundColor: "#F6F6F6",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 8,
-    width: "100%",
-    height: 50,
-    padding: 16,
-  },
-  inputEmail: {
-    marginTop: 16,
-    backgroundColor: "#F6F6F6",
-    borderWidth: 1,
-    borderRadius: 8,
-    width: "100%",
-    height: 50,
-    padding: 16,
-  },
-  inputPassword: {
-    marginTop: 16,
-    backgroundColor: "#F6F6F6",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 8,
-    width: "100%",
-    height: 50,
-    padding: 16,
   },
   btnShow: {
     position: "absolute",
