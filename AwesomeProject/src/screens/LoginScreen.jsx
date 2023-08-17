@@ -9,36 +9,73 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+
 import Background from "../components/Background";
 
 import { useState } from "react";
 
+import { useNavigation } from "@react-navigation/native";
+
+import { auth } from "../../firebase/config";
+
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+import { useDispatch } from "react-redux";
+
+import { addUser } from "../../redux/sliceAuth";
+
+const initialState = {
+  email: "",
+  password: "",
+};
+
 export const LoginScreen = () => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
   const [isFocused, setIsFocused] = useState(false);
   const [isPassword, setIsPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(true);
+
+  const [state, setState] = useState(initialState);
 
   const handleFocus = () => setIsFocused(true);
   const handleBlur = () => setIsFocused(false);
   const handleFocusPassword = () => setIsPassword(true);
   const handleBlurPassword = () => setIsPassword(false);
 
-  const onData = (event) => {
-    event.preventDefault();
-    console.log(`email: ${email}`, `password: ${password}`);
-    setShowPassword(true);
-    reset();
+  const onData = async () => {
+    try {
+      const credentials = await signInWithEmailAndPassword(
+        auth,
+        state.email,
+        state.password
+      );
+
+      const user = credentials.user;
+      updateUserProfileWithPhotoURL(user);
+      setShowPassword(true);
+      navigation.navigate("Home");
+    } catch (error) {
+      throw error;
+    }
   };
-  const reset = () => {
-    setEmail("");
-    setPassword("");
+
+  const updateUserProfileWithPhotoURL = async (user) => {
+    const { displayName, uid, photoURL } = user;
+    const updatedProfile = {
+      login: displayName,
+      userId: uid,
+      imageUser: photoURL,
+      email: state.email,
+      password: state.password,
+      userRegister: true,
+    };
+    dispatch(addUser(updatedProfile));
   };
 
   const getPassword = () => {
-    if (password !== "") setShowPassword(false);
+    if (state.password !== "") setShowPassword(false);
   };
 
   return (
@@ -72,8 +109,10 @@ export const LoginScreen = () => {
                 borderColor: !isFocused ? "#E8E8E8" : "#FF6C00",
               }}
               keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
+              value={state.email}
+              onChangeText={(value) =>
+                setState((prevState) => ({ ...prevState, email: value }))
+              }
               placeholder="Адреса електронної пошти"
               onFocus={handleFocus}
               onBlur={handleBlur}
@@ -91,8 +130,10 @@ export const LoginScreen = () => {
                 borderColor: !isPassword ? "#E8E8E8" : "#FF6C00",
               }}
               secureTextEntry={showPassword}
-              value={password}
-              onChangeText={setPassword}
+              value={state.password}
+              onChangeText={(value) =>
+                setState((prevState) => ({ ...prevState, password: value }))
+              }
               placeholder="Пароль"
               onFocus={handleFocusPassword}
               onBlur={handleBlurPassword}
@@ -109,7 +150,12 @@ export const LoginScreen = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity>
-              <Text style={styles.come}>Немає акаунту? Зареєструватися</Text>
+              <Text
+                style={styles.come}
+                onPress={() => navigation.navigate("Registration")}
+              >
+                Немає акаунту? Зареєструватися
+              </Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -146,27 +192,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.01,
     color: "#212121",
     marginTop: 32,
-  },
-  inputEmail: {
-    marginTop: 32,
-    backgroundColor: "#F6F6F6",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 8,
-    width: "100%",
-    height: 50,
-    padding: 16,
-    borderColor: !isFocused ? "#E8E8E8" : '#FF6C00',
-  },
-  inputPassword: {
-    marginTop: 16,
-    backgroundColor: "#F6F6F6",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 8,
-    width: "100%",
-    height: 50,
-    padding: 16,
   },
   btnShow: {
     position: "absolute",
