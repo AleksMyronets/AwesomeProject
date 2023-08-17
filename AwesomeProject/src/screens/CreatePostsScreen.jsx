@@ -7,11 +7,24 @@ import {
   Image,
 } from "react-native";
 import { FontAwesome, AntDesign, Feather } from "@expo/vector-icons";
+
 import { useNavigation } from "@react-navigation/native";
+
 import { useState, useEffect } from "react";
+
 import { Camera } from "expo-camera";
+
 import * as MediaLibrary from "expo-media-library";
+
 import * as Location from "expo-location";
+
+import { useSelector } from "react-redux";
+
+import { writeDataToFirestorePost } from "../../firebase/frestore";
+
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+
+import { storage } from "../../firebase/config";
 
 export const CreatePostsScreen = () => {
   const navigation = useNavigation();
@@ -22,6 +35,7 @@ export const CreatePostsScreen = () => {
   const [locationTitle, setLocationTitle] = useState("");
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [namePost, setNamePost] = useState("");
+  const { login, userId } = useSelector((state) => state.auth);
 
   useEffect(() => {
     setIsButtonDisabled(checkButtonDisabled());
@@ -48,8 +62,40 @@ export const CreatePostsScreen = () => {
   };
 
   const publication = () => {
+    uploadPhotoToServer();
     navigation.navigate("PostScreen");
     deleteState();
+  };
+
+  const uploadPhotoToServer = async () => {
+    if (photo) {
+      try {
+        const response = await fetch(photo);
+
+        const file = await response.blob();
+        const uniquePostId = Date.now().toString();
+        const imageRef = ref(
+          storage,
+          `postImage/${uniquePostId}/${file.data.name}`
+        );
+
+        await uploadBytes(imageRef, file);
+        const downloadeURL = await getDownloadURL(imageRef);
+        const infoUser = {
+          photo: downloadeURL,
+          location,
+          locationTitle,
+          namePost,
+          login,
+          userId,
+          comments: 0,
+          likes: 0,
+        };
+        writeDataToFirestorePost(infoUser);
+      } catch (error) {
+        console.warn("uploadImageToServer", error);
+      }
+    }
   };
 
   const deleteState = () => {
@@ -59,7 +105,6 @@ export const CreatePostsScreen = () => {
     setPhoto(null);
     setIsButtonDisabled(true);
   };
-
   return (
     <>
       <View style={styles.header}>
@@ -152,6 +197,11 @@ const styles = StyleSheet.create({
   container: {
     width: 343,
     alignSelf: "center",
+  },
+  flipContainer: {
+    position: "absolute",
+    top: 40,
+    left: 10,
   },
   header: {
     height: 88,
